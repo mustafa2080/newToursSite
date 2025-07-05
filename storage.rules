@@ -1,0 +1,93 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.role in ['admin', 'super_admin'];
+    }
+    
+    function isValidImageFile() {
+      return resource.contentType.matches('image/.*') &&
+             resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+    
+    function isValidDocumentFile() {
+      return resource.contentType in ['application/pdf', 'application/msword', 
+                                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] &&
+             resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
+
+    // Public files (anyone can read)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true; // Profile images are public
+      allow write: if isOwner(userId) && isValidImageFile();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // User uploaded files (documents, etc.)
+    match /users/{userId}/files/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && (isValidImageFile() || isValidDocumentFile());
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Trip images
+    match /trips/{tripId}/{fileName} {
+      allow read: if true; // Trip images are public
+      allow write: if isAdmin() && isValidImageFile();
+      allow delete: if isAdmin();
+    }
+
+    // Hotel images
+    match /hotels/{hotelId}/{fileName} {
+      allow read: if true; // Hotel images are public
+      allow write: if isAdmin() && isValidImageFile();
+      allow delete: if isAdmin();
+    }
+
+    // Review images
+    match /reviews/{reviewId}/{fileName} {
+      allow read: if true; // Review images are public once approved
+      allow write: if isAuthenticated() && isValidImageFile();
+      allow delete: if isAdmin();
+    }
+
+    // Content/CMS images
+    match /content/{contentType}/{fileName} {
+      allow read: if true; // Content images are public
+      allow write: if isAdmin() && isValidImageFile();
+      allow delete: if isAdmin();
+    }
+
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{fileName} {
+      allow read, write: if isOwner(userId) && isValidImageFile();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Admin uploads
+    match /admin/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Default deny rule
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

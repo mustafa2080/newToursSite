@@ -1,0 +1,181 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
+    }
+    
+    function isActiveUser() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data, admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create their own account during registration
+      allow create: if isOwner(userId) && 
+                       request.auth.uid == resource.data.uid &&
+                       request.resource.data.role == 'user';
+      
+      // Users can update their own data (except role), admins can update all
+      allow update: if (isOwner(userId) && 
+                       request.resource.data.role == resource.data.role) ||
+                       isAdmin();
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Trips collection
+    match /trips/{tripId} {
+      // Anyone can read active trips, admins can read all
+      allow read: if resource.data.status == 'active' || isAdmin();
+      
+      // Only admins can create, update, delete trips
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Hotels collection
+    match /hotels/{hotelId} {
+      // Anyone can read active hotels, admins can read all
+      allow read: if resource.data.status == 'active' || isAdmin();
+      
+      // Only admins can create, update, delete hotels
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      // Anyone can read approved reviews, users can read their own, admins can read all
+      allow read: if resource.data.status == 'approved' || 
+                     isOwner(resource.data.userId) || 
+                     isAdmin();
+      
+      // Authenticated users can create reviews for their own account
+      allow create: if isActiveUser() && 
+                       request.auth.uid == request.resource.data.userId &&
+                       request.resource.data.status == 'pending';
+      
+      // Users can update their own pending reviews, admins can update all
+      allow update: if (isOwner(resource.data.userId) && 
+                       resource.data.status == 'pending') ||
+                       isAdmin();
+      
+      // Users can delete their own reviews, admins can delete all
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      // Users can read their own bookings, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Authenticated users can create bookings for their own account
+      allow create: if isActiveUser() && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      // Users can update their own bookings (limited fields), admins can update all
+      allow update: if (isOwner(resource.data.userId) && 
+                       request.resource.data.userId == resource.data.userId &&
+                       request.resource.data.status in ['pending', 'cancelled']) ||
+                       isAdmin();
+      
+      // Only admins can delete bookings
+      allow delete: if isAdmin();
+    }
+
+    // Wishlist collection
+    match /wishlist/{wishlistId} {
+      // Users can read their own wishlist items, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Authenticated users can create wishlist items for their own account
+      allow create: if isActiveUser() && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      // Users can update/delete their own wishlist items, admins can do all
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Content collection (for CMS)
+    match /content/{contentId} {
+      // Anyone can read content
+      allow read: if true;
+      
+      // Only admins can create, update, delete content
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Categories collection
+    match /categories/{categoryId} {
+      // Anyone can read categories
+      allow read: if true;
+      
+      // Only admins can create, update, delete categories
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Analytics collection
+    match /analytics/{analyticsId} {
+      // Only admins can read analytics
+      allow read: if isAdmin();
+      
+      // System can write analytics (via server-side code)
+      allow write: if false; // Handled by server-side functions
+    }
+
+    // Messages/Contact forms collection
+    match /messages/{messageId} {
+      // Users can read their own messages, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Anyone can create contact messages
+      allow create: if true;
+      
+      // Only admins can update/delete messages
+      allow update, delete: if isAdmin();
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      // Anyone can read public settings
+      allow read: if resource.data.public == true || isAdmin();
+      
+      // Only admins can create, update, delete settings
+      allow create, update, delete: if isAdmin();
+    }
+
+    // File uploads metadata
+    match /uploads/{uploadId} {
+      // Users can read their own uploads, admins can read all
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      
+      // Authenticated users can create uploads for their own account
+      allow create: if isActiveUser() && 
+                       request.auth.uid == request.resource.data.userId;
+      
+      // Users can update/delete their own uploads, admins can do all
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Default deny rule for any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
