@@ -4,6 +4,57 @@
  */
 
 /**
+ * Validate image file type and size
+ * @param {File} file - The file to validate
+ * @returns {boolean} - True if valid, false otherwise
+ */
+export const validateImageFile = (file) => {
+  if (!file) return false;
+
+  // Check file type
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  if (!validTypes.includes(file.type)) {
+    console.error('❌ Invalid file type:', file.type);
+    return false;
+  }
+
+  // Check file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    console.error('❌ File too large:', Math.round(file.size / 1024 / 1024) + 'MB');
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Process image for database storage with Firebase limits in mind
+ * @param {File} file - The image file to process
+ * @param {Object} options - Processing options
+ * @returns {Promise<string>} - Compressed image as base64 string
+ */
+export const processImageForDatabase = async (file, options = {}) => {
+  const defaultOptions = {
+    maxWidth: 800,
+    maxHeight: 600,
+    quality: 0.6,
+    outputFormat: 'image/jpeg',
+    useSmartCompression: true
+  };
+
+  const finalOptions = { ...defaultOptions, ...options };
+
+  try {
+    const compressedImage = await compressImage(file, finalOptions);
+    return compressedImage;
+  } catch (error) {
+    console.error('❌ Error processing image for database:', error);
+    throw error;
+  }
+};
+
+/**
  * Compress image with smart settings based on use case
  * @param {File} file - The image file to compress
  * @param {Object} options - Compression options
@@ -27,31 +78,32 @@ export const compressImage = (file, options = {}) => {
       const originalSize = file.size;
       
       // Smart compression settings based on file size and type
+      // Aggressive compression for Firebase limits (1MB max)
       let finalMaxWidth = maxWidth;
       let finalMaxHeight = maxHeight;
       let finalQuality = quality;
 
       if (useSmartCompression) {
         if (originalSize > 10 * 1024 * 1024) { // > 10MB
+          finalMaxWidth = 600;
+          finalMaxHeight = 600;
+          finalQuality = 0.2;
+        } else if (originalSize > 5 * 1024 * 1024) { // > 5MB
+          finalMaxWidth = 700;
+          finalMaxHeight = 700;
+          finalQuality = 0.3;
+        } else if (originalSize > 2 * 1024 * 1024) { // > 2MB
           finalMaxWidth = 800;
           finalMaxHeight = 800;
-          finalQuality = 0.3;
-        } else if (originalSize > 5 * 1024 * 1024) { // > 5MB
+          finalQuality = 0.4;
+        } else if (originalSize > 1 * 1024 * 1024) { // > 1MB
+          finalMaxWidth = 900;
+          finalMaxHeight = 900;
+          finalQuality = 0.5;
+        } else {
           finalMaxWidth = 1000;
           finalMaxHeight = 1000;
-          finalQuality = 0.4;
-        } else if (originalSize > 2 * 1024 * 1024) { // > 2MB
-          finalMaxWidth = 1200;
-          finalMaxHeight = 1200;
-          finalQuality = 0.5;
-        } else if (originalSize > 1 * 1024 * 1024) { // > 1MB
-          finalMaxWidth = 1400;
-          finalMaxHeight = 1400;
           finalQuality = 0.6;
-        } else {
-          finalMaxWidth = 1600;
-          finalMaxHeight = 1600;
-          finalQuality = 0.7;
         }
       }
 
@@ -94,10 +146,41 @@ export const compressImage = (file, options = {}) => {
       ctx.drawImage(img, 0, 0, width, height);
 
       // Convert to base64 with specified quality
-      const compressedBase64 = canvas.toDataURL(outputFormat, finalQuality);
-      
-      // Calculate compression stats
-      const compressedSize = Math.round(compressedBase64.length * 0.75);
+      let compressedBase64 = canvas.toDataURL(outputFormat, finalQuality);
+      let compressedSize = Math.round(compressedBase64.length * 0.75);
+
+      // Firebase has a 1MB limit for document fields
+      // If compressed image is still too large, compress further
+      const maxFirebaseSize = 800 * 1024; // 800KB to be safe
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      while (compressedSize > maxFirebaseSize && attempts < maxAttempts) {
+        attempts++;
+        finalQuality = Math.max(0.1, finalQuality * 0.7); // Reduce quality by 30%
+
+        // Also reduce dimensions if needed
+        if (attempts > 2) {
+          width = Math.round(width * 0.8);
+          height = Math.round(height * 0.8);
+          canvas.width = width;
+          canvas.height = height;
+
+          // Redraw with smaller dimensions
+          ctx.clearRect(0, 0, width, height);
+          if (outputFormat === 'image/jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+        }
+
+        compressedBase64 = canvas.toDataURL(outputFormat, finalQuality);
+        compressedSize = Math.round(compressedBase64.length * 0.75);
+
+        console.log(`🔄 Attempt ${attempts}: ${Math.round(compressedSize / 1024)}KB (quality: ${finalQuality})`);
+      }
+
       const compressionRatio = Math.round((1 - compressedSize / originalSize) * 100);
 
       console.log('🖼️ Image compression stats:', {
@@ -106,18 +189,12 @@ export const compressImage = (file, options = {}) => {
         compression: `${compressionRatio}%`,
         dimensions: `${width}x${height}`,
         quality: finalQuality,
-        format: outputFormat
+        format: outputFormat,
+        attempts: attempts
       });
 
-      resolve({
-        base64: compressedBase64,
-        originalSize,
-        compressedSize,
-        compressionRatio,
-        width,
-        height,
-        quality: finalQuality
-      });
+      // Return just the base64 string for backward compatibility
+      resolve(compressedBase64);
     };
 
     img.onerror = () => reject(new Error('Failed to load image'));

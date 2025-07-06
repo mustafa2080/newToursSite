@@ -7,6 +7,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { setupAllSampleData } from '../utils/addSampleData';
+import { addSampleCategories, updateCategoriesWithImages } from '../utils/addSampleCategories';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 
@@ -14,6 +15,7 @@ const SetupData = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [categoriesResult, setCategoriesResult] = useState(null);
 
   const handleSetupData = async () => {
     setLoading(true);
@@ -23,7 +25,7 @@ const SetupData = () => {
     try {
       console.log('🚀 Starting data setup...');
       const setupResult = await setupAllSampleData();
-      
+
       if (setupResult.success) {
         setResult(setupResult);
         console.log('✅ Data setup completed successfully!');
@@ -33,6 +35,52 @@ const SetupData = () => {
     } catch (err) {
       console.error('❌ Setup failed:', err);
       setError(err.message || 'Setup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetupCategories = async () => {
+    setLoading(true);
+    setError(null);
+    setCategoriesResult(null);
+
+    try {
+      console.log('🏷️ Starting categories setup...');
+      const categoriesResult = await addSampleCategories();
+
+      if (categoriesResult.success) {
+        setCategoriesResult(categoriesResult);
+        console.log('✅ Categories setup completed successfully!');
+      } else {
+        setError(categoriesResult.error || 'Unknown error occurred');
+      }
+    } catch (err) {
+      console.error('❌ Categories setup failed:', err);
+      setError(err.message || 'Categories setup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateCategoriesImages = async () => {
+    setLoading(true);
+    setError(null);
+    setCategoriesResult(null);
+
+    try {
+      console.log('🖼️ Starting categories images update...');
+      const updateResult = await updateCategoriesWithImages();
+
+      if (updateResult.success) {
+        setCategoriesResult(updateResult);
+        console.log('✅ Categories images updated successfully!');
+      } else {
+        setError(updateResult.error || 'Unknown error occurred');
+      }
+    } catch (err) {
+      console.error('❌ Categories images update failed:', err);
+      setError(err.message || 'Categories images update failed');
     } finally {
       setLoading(false);
     }
@@ -102,17 +150,92 @@ const SetupData = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={handleSetupData}
-                loading={loading}
-                disabled={loading || result?.success}
-                size="large"
-                icon={loading ? <ArrowPathIcon className="animate-spin" /> : <PlayIcon />}
-              >
-                {loading ? 'Setting up data...' : 'Setup Sample Data'}
-              </Button>
+              <div className="space-y-4">
+                <Button
+                  onClick={handleSetupData}
+                  loading={loading}
+                  disabled={loading || result?.success}
+                  size="large"
+                  icon={loading ? <ArrowPathIcon className="animate-spin" /> : <PlayIcon />}
+                >
+                  {loading ? 'Setting up data...' : 'Setup Sample Data'}
+                </Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button
+                    onClick={handleSetupCategories}
+                    loading={loading}
+                    disabled={loading}
+                    variant="secondary"
+                    icon={loading ? <ArrowPathIcon className="animate-spin" /> : <PlayIcon />}
+                  >
+                    Add Sample Categories
+                  </Button>
+
+                  <Button
+                    onClick={handleUpdateCategoriesImages}
+                    loading={loading}
+                    disabled={loading}
+                    variant="secondary"
+                    icon={loading ? <ArrowPathIcon className="animate-spin" /> : <PlayIcon />}
+                  >
+                    Update Categories Images
+                  </Button>
+                </div>
+              </div>
             </div>
           </Card>
+
+          {/* Categories Result */}
+          {categoriesResult?.success && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="p-6 border-blue-200 bg-blue-50">
+                <div className="flex items-start">
+                  <CheckCircleIcon className="h-6 w-6 text-blue-600 mt-1 mr-3" />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                      ✅ Categories Setup Completed!
+                    </h3>
+                    <div className="text-blue-800 space-y-2">
+                      <p>{categoriesResult.message}</p>
+                      {categoriesResult.categoriesAdded && (
+                        <p>• Categories added: <strong>{categoriesResult.categoriesAdded}</strong></p>
+                      )}
+                      {categoriesResult.categoriesUpdated && (
+                        <p>• Categories updated: <strong>{categoriesResult.categoriesUpdated}</strong></p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <p className="text-blue-800 font-medium mb-2">Next Steps:</p>
+                      <div className="space-y-2">
+                        <a
+                          href="/"
+                          className="inline-flex items-center text-blue-700 hover:text-blue-900 underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          🏠 View Home Page (Popular Destinations)
+                        </a>
+                        <br />
+                        <a
+                          href="/debug/categories"
+                          className="inline-flex items-center text-blue-700 hover:text-blue-900 underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          🛠️ Categories Image Updater Tool
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Success Result */}
           {result?.success && (

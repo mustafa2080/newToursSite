@@ -82,6 +82,7 @@ import SearchResults from './pages/SearchResults';
 import SetupData from './pages/SetupData';
 import ImageGalleryTest from './components/test/ImageGalleryTest';
 import SearchDebugger from './components/debug/SearchDebugger';
+import CategoriesImageUpdater from './components/debug/CategoriesImageUpdater';
 import './App.css';
 
 function App() {
@@ -126,6 +127,7 @@ function App() {
             <Route path="setup-data" element={<SetupData />} />
             <Route path="test/image-gallery" element={<ImageGalleryTest />} />
             <Route path="debug/search" element={<SearchDebugger />} />
+            <Route path="debug/categories" element={<CategoriesImageUpdater />} />
             <Route path="test/firebase" element={<FirebaseTest />} />
             <Route path="setup" element={<QuickSetup />} />
             <Route path="debug/login" element={<LoginDebug />} />

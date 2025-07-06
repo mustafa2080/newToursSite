@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -9,11 +9,11 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../config/firebase';
+import { db } from '../../config/firebase';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { processImageForDatabase, validateImageFile } from '../../utils/imageCompression';
 
 const EditCategory = () => {
   const { id } = useParams();
@@ -21,7 +21,7 @@ const EditCategory = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
+
   const [category, setCategory] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -102,68 +102,33 @@ const EditCategory = () => {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Check file size (limit to 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+      // Validate image file
+      if (!validateImageFile(file)) {
+        alert('Invalid image file. Please use JPEG, PNG, WebP, or GIF format (max 10MB)');
         return;
       }
 
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file');
-        return;
-      }
+      try {
+        console.log(`🗜️ Compressing image for edit: ${file.name}...`);
 
-      setImageFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+        // Compress image for preview and storage
+        const compressedImage = await processImageForDatabase(file);
+
+        setImageFile(file);
+        setImagePreview(compressedImage);
+
+        console.log(`✅ Image compressed and ready for update`);
+      } catch (error) {
+        console.error('❌ Error compressing image:', error);
+        alert('Error processing image. Please try again.');
+      }
     }
   };
 
-  const uploadImage = async () => {
-    if (!imageFile) return formData.image;
 
-    try {
-      setImageUploading(true);
-      console.log('📤 Starting image upload...');
-      
-      // Create a unique filename
-      const fileName = `${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const imageRef = ref(storage, `categories/${fileName}`);
-      
-      console.log('📤 Uploading to:', `categories/${fileName}`);
-      
-      // Upload the file
-      const snapshot = await uploadBytes(imageRef, imageFile);
-      console.log('✅ Upload successful, getting download URL...');
-      
-      // Get the download URL
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      console.log('✅ Download URL obtained:', downloadURL);
-      
-      return downloadURL;
-    } catch (error) {
-      console.error('❌ Error uploading image:', error);
-      
-      // Use base64 as fallback
-      if (imagePreview && imagePreview.startsWith('data:')) {
-        console.log('📷 Using base64 image as fallback');
-        return imagePreview;
-      }
-      
-      throw error;
-    } finally {
-      setImageUploading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -203,7 +168,13 @@ const EditCategory = () => {
       const categoryData = {
         ...formData,
         image: imageUrl,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        imageMetadata: imageFile ? {
+          originalSize: imageFile.size,
+          compressedSize: Math.round(imageUrl.length * 0.75),
+          compressionDate: new Date(),
+          uploadMethod: 'edit-category'
+        } : formData.imageMetadata // Keep existing metadata if no new image
       };
 
       await updateDoc(doc(db, 'categories', id), categoryData);
@@ -426,12 +397,44 @@ const EditCategory = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Current Image
                     </label>
-                    <div className="relative inline-block">
+                    <div className="relative inline-block group">
                       <img
                         src={imagePreview}
                         alt="Category preview"
-                        className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                        className="w-48 h-48 object-cover rounded-lg border border-gray-300 shadow-sm group-hover:shadow-md transition-shadow duration-200"
                       />
+                      {/* Image overlay with info */}
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-white text-center">
+                          <PhotoIcon className="h-6 w-6 mx-auto mb-1" />
+                          <span className="text-sm">Click to view full size</span>
+                        </div>
+                      </div>
+                      {/* Full size preview on click */}
+                      <button
+                        type="button"
+                        onClick={() => window.open(imagePreview, '_blank')}
+                        className="absolute inset-0 w-full h-full cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                      <p className="text-xs text-gray-500">
+                        Click image to view full size • Current size: 48x48 display
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to remove the current image?')) {
+                            setImagePreview('');
+                            setFormData(prev => ({ ...prev, image: '' }));
+                            setImageFile(null);
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium flex items-center space-x-1"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                        <span>Remove Image</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -452,6 +455,50 @@ const EditCategory = () => {
                       <div className="text-sm text-blue-600">Uploading...</div>
                     )}
                   </div>
+                </div>
+
+                {/* Quick Image Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quick Image Selection
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { name: 'Beach', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'Mountain', url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'City', url: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'Desert', url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'Safari', url: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'Island', url: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'Cultural', url: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' },
+                      { name: 'Luxury', url: 'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' }
+                    ].map((preset) => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({ ...prev, image: preset.url }));
+                          setImagePreview(preset.url);
+                          setImageFile(null);
+                        }}
+                        className="relative group overflow-hidden rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          className="w-full h-20 object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                          <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {preset.name}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-blue-600 text-xs mt-2">
+                    💡 Click on any image above to use it, or upload your own custom image
+                  </p>
                 </div>
 
                 {/* Or Image URL */}
