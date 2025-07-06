@@ -855,7 +855,7 @@ const ProfileSettings = ({ user }) => {
               This will be displayed on your profile and in your bookings.
             </p>
             <p className="text-xs text-gray-400 mt-2">
-              JPG, PNG or GIF. Max size 5MB. Minimum 100x100px.
+              JPG, PNG, WebP or GIF. Max size 10MB. Images are automatically compressed for optimal performance.
             </p>
           </div>
         </div>

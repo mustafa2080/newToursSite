@@ -3,6 +3,7 @@ import { CameraIcon, UserIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
+import { processImageForDatabase, validateImageFile } from '../../utils/imageCompression';
 
 const SimpleImageUpload = ({ 
   currentImage, 
@@ -28,68 +29,49 @@ const SimpleImageUpload = ({
     xlarge: 'w-12 h-12'
   };
 
-  const compressImage = (file, maxWidth = 300, quality = 0.8) => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
 
-      img.onload = () => {
-        // Calculate new dimensions
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-
-        // Draw and compress
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // Convert to base64
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(compressedDataUrl);
-      };
-
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-      toast.error('Image size must be less than 2MB');
+    // Validate file using enhanced validation
+    if (!validateImageFile(file)) {
+      toast.error('Please select a valid image file (JPEG, PNG, WebP, GIF) under 10MB');
       return;
     }
 
     setUploading(true);
     try {
-      console.log('🖼️ Processing image...', file.name);
-      
-      // Compress image
-      const compressedImage = await compressImage(file);
-      console.log('✅ Image compressed successfully');
-      
-      // Update profile with base64 image
+      console.log('🖼️ Processing profile image...', file.name);
+      console.log('📊 Original file size:', Math.round(file.size / 1024) + 'KB');
+
+      // Compress image with profile-optimized settings
+      const compressedImage = await processImageForDatabase(file, {
+        maxWidth: 400,  // Profile images don't need to be huge
+        maxHeight: 400,
+        quality: 0.7,   // Good quality for profile pictures
+        outputFormat: 'image/jpeg'
+      });
+
+      console.log('✅ Profile image compressed successfully');
+      console.log('📊 Compressed size:', Math.round(compressedImage.length * 0.75 / 1024) + 'KB');
+
+      // Update profile with compressed base64 image
       const updateResult = await updateProfile({
         profileImage: compressedImage
       });
 
       if (updateResult.success) {
         onImageUpdate?.(compressedImage);
-        toast.success('Profile picture updated successfully!');
+        toast.success('Profile picture updated successfully! 🖼️');
         console.log('✅ Profile image updated in Firestore');
       } else {
         throw new Error(updateResult.error);
       }
     } catch (error) {
-      console.error('❌ Upload error:', error);
-      toast.error('Failed to upload image. Please try again.');
+      console.error('❌ Profile image upload error:', error);
+      toast.error('Failed to upload profile picture. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -211,13 +193,16 @@ const SimpleImageUpload = ({
       {/* Status Text */}
       <div className="mt-2 text-center">
         <p className="text-sm text-gray-600">
-          {uploading ? 'Uploading...' : 'Click to upload or change picture'}
+          {uploading ? 'Compressing and uploading...' : 'Click to upload or change picture'}
         </p>
         {currentImage && (
           <p className="text-xs text-green-600 mt-1">
-            ✅ Profile picture set
+            ✅ Profile picture set & optimized
           </p>
         )}
+        <p className="text-xs text-gray-400 mt-1">
+          Images are automatically compressed for optimal performance
+        </p>
       </div>
     </div>
   );
