@@ -70,6 +70,7 @@ import SearchManagement from './pages/admin/SearchManagement';
 import BackupRestore from './pages/admin/BackupRestore';
 import SystemLogs from './pages/admin/SystemLogs';
 import CommentsManagement from './pages/admin/CommentsManagement';
+import ContactMessagesManagement from './pages/admin/ContactMessagesManagement';
 import CategoryPage from './pages/CategoryPage';
 import PaymentsManagement from './pages/admin/PaymentsManagement';
 import ReportsManagement from './pages/admin/ReportsManagement';
@@ -198,6 +199,7 @@ function App() {
             <Route path="backup" element={<BackupRestore />} />
             <Route path="logs" element={<SystemLogs />} />
             <Route path="comments" element={<CommentsManagement />} />
+            <Route path="contact-messages" element={<ContactMessagesManagement />} />
             {/* Add more admin routes here */}
           </Route>
         </Routes>

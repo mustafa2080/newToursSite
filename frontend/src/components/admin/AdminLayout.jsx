@@ -28,6 +28,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ArrowDownTrayIcon,
+  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../common/Button';
@@ -77,6 +78,7 @@ const AdminLayout = () => {
       items: [
         { name: 'Website Content', href: '/admin/content', icon: DocumentTextIcon, description: 'Pages & content' },
         { name: 'Comments', href: '/admin/comments', icon: ChatBubbleLeftIcon, description: 'Manage user comments' },
+        { name: 'Contact Messages', href: '/admin/contact-messages', icon: EnvelopeIcon, description: 'Customer inquiries' },
         { name: 'Media Library', href: '/admin/media', icon: PhotoIcon, description: 'Images & videos' },
         { name: 'Promotions', href: '/admin/promotions', icon: GlobeAltIcon, description: 'Deals & offers' },
       ]

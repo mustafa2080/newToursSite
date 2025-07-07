@@ -6,10 +6,13 @@ import {
   EnvelopeIcon,
   ClockIcon,
   PaperAirplaneIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { contactAPI } from '../services/contactAPI';
+import toast from 'react-hot-toast';
 
 const Contact = () => {
   const [content, setContent] = useState(null);
@@ -23,6 +26,7 @@ const Contact = () => {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
     loadContent();
@@ -102,25 +106,49 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
       setFormLoading(true);
-      // Simulate API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      alert('Thank you for your message! We\'ll get back to you soon.');
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-      });
+
+      // Create contact message in Firebase
+      const messageData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+        userAgent: navigator.userAgent,
+        ipAddress: 'Unknown', // Could be obtained from a service
+        source: 'contact_form'
+      };
+
+      const result = await contactAPI.create(messageData);
+
+      if (result.success) {
+        setSubmitSuccess(true);
+        toast.success('Thank you for your message! We\'ll get back to you soon. 📧');
+
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: '',
+        });
+
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          setSubmitSuccess(false);
+        }, 5000);
+      } else {
+        throw new Error(result.error || 'Failed to send message');
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Error sending message. Please try again.');
+      toast.error('Error sending message. Please try again.');
     } finally {
       setFormLoading(false);
     }
@@ -269,7 +297,22 @@ const Contact = () => {
             >
               <Card className="p-8">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-6">Send us a Message</h3>
-                
+
+                {/* Success Message */}
+                {submitSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center"
+                  >
+                    <CheckCircleIcon className="h-6 w-6 text-green-600 mr-3" />
+                    <div>
+                      <h4 className="text-green-800 font-medium">Message Sent Successfully!</h4>
+                      <p className="text-green-700 text-sm">Thank you for contacting us. We'll get back to you soon.</p>
+                    </div>
+                  </motion.div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
