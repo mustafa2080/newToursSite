@@ -283,11 +283,10 @@ const BookHotel = () => {
       
       if (response.success) {
         setSuccess(true);
-        showSuccess(`🏨 Hotel booking confirmed! Redirecting to hotel details...`, 5000);
-        // Redirect to hotel page after 3 seconds
+        showSuccess(`🏨 Hotel booking confirmed! Redirecting to home page...`, 5000);
+        // Redirect to home page after 3 seconds
         setTimeout(() => {
-          // Use the hotelId from URL params to ensure correct navigation
-          navigate(`/hotels/${hotelId}`);
+          navigate('/');
         }, 3000);
       }
     } catch (error) {
@@ -414,18 +413,18 @@ const BookHotel = () => {
             🏨 Your hotel booking has been confirmed! We'll contact you soon with detailed confirmation and check-in instructions. You can view this booking in your profile anytime.
           </p>
           <div className="space-y-2">
-            <Button onClick={() => navigate(`/hotels/${hotelId}`)}>
-              Back to Hotel Details
+            <Button onClick={() => navigate('/')}>
+              Go to Home Page
             </Button>
             <Button variant="outline" onClick={() => navigate('/profile/bookings')}>
               View My Bookings
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/hotels')}>
-              Browse More Hotels
+            <Button variant="ghost" onClick={() => navigate(`/hotels/${hotelId}`)}>
+              Back to Hotel Details
             </Button>
           </div>
           <p className="text-xs text-gray-500 mt-4">
-            Redirecting to hotel details in 3 seconds...
+            Redirecting to home page in 3 seconds...
           </p>
         </div>
       </div>
