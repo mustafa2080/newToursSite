@@ -833,15 +833,7 @@ const ProfileSettings = ({ user }) => {
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h2>
 
-        {/* Debug Info */}
-        {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
-          <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
-            <strong>Debug Info:</strong><br/>
-            User ID: {user?.uid || 'No user'}<br/>
-            Profile Image: {user?.profileImage ? 'Available' : 'None'}<br/>
-            Image URL: {user?.profileImage ? user.profileImage.substring(0, 50) + '...' : 'No URL'}
-          </div>
-        )}
+
 
         <div className="flex items-center space-x-6">
           <SimpleImageUpload
