@@ -386,12 +386,11 @@ const BookTrip = () => {
           mainBooker: mainBooker
         });
         setSuccess(true);
-        showSuccess(`🎉 Booking confirmed! Reference: ${bookingPayload.bookingReference}`, 6000);
+        showSuccess(`🎉 Trip booking confirmed! Reference: ${bookingPayload.bookingReference}. Redirecting to home page...`, 6000);
 
-        // Redirect to trip page after 5 seconds
+        // Redirect to home page after 5 seconds
         setTimeout(() => {
-          // Use the tripId from URL params to ensure correct navigation
-          navigate(`/trips/${tripId}`);
+          navigate('/');
         }, 5000);
       }
     } catch (error) {
@@ -541,10 +540,10 @@ const BookTrip = () => {
 
             <div className="space-y-3">
               <Button
-                onClick={() => navigate(`/trips/${tripId}`)}
+                onClick={() => navigate('/')}
                 className="w-full"
               >
-                Back to Trip Details
+                Go to Home Page
               </Button>
               <Button
                 variant="outline"
@@ -555,15 +554,15 @@ const BookTrip = () => {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate('/trips')}
+                onClick={() => navigate(`/trips/${tripId}`)}
                 className="w-full"
               >
-                Browse More Trips
+                Back to Trip Details
               </Button>
             </div>
 
             <p className="text-xs text-gray-500 mt-4">
-              Redirecting to trip details in 5 seconds...
+              Redirecting to home page in 5 seconds...
             </p>
           </div>
         </motion.div>
