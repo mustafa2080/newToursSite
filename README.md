@@ -1,204 +1,245 @@
-<<<<<<< HEAD
-# Tours - Tourism Website
+# 🌍 Premium Tours Website
 
-A comprehensive tourism website built with React.js, Node.js, Express, and PostgreSQL.
+A modern, full-featured tours and travel website built with React and Firebase, featuring advanced admin dashboard, image compression, contact management, and real-time notifications.
 
-## 🚀 Features
+## ✨ Features
 
-### User Features
-- User registration, login, and profile management
-- Browse trips and hotels by categories (countries)
-- Advanced search and filtering system
-- Booking system for trips and hotels
-- Review and rating system
-- Booking history and management
-- Wishlist functionality
+### 🎯 **Core Features**
+- **Modern React Frontend**: Built with React 18 and Vite for optimal performance
+- **Firebase Integration**: Authentication, Firestore database, and Cloud Storage
+- **Responsive Design**: Mobile-first design with Tailwind CSS
+- **Real-time Updates**: Live notifications and updates
+- **SEO Optimized**: Meta tags and structured data
 
-### Admin Features
-- Complete admin dashboard
-- Manage trips, hotels, and categories
-- User and booking management
-- Content management (About, Contact pages)
-- Real-time analytics and reports
-- Admin activity logs
+### 👤 **User Features**
+- **Browse & Search**: Advanced search with filters for trips and hotels
+- **User Authentication**: Secure login/register system with profile management
+- **Booking System**: Complete booking management with payment integration
+- **Review System**: User reviews and ratings with moderation
+- **Wishlist**: Save favorite trips and hotels
+- **Contact System**: Contact form with admin notifications
 
-### Technical Features
-- Responsive design (mobile, tablet, desktop)
-- SEO optimized with meta tags and structured data
-- High security standards (XSS, CSRF protection)
-- Fast loading with lazy loading and optimized images
-- Dark/light theme toggle
-- Multilingual support (optional)
+### 🛠️ **Admin Features**
+- **Comprehensive Dashboard**: Analytics, statistics, and real-time data
+- **Content Management**: Full CRUD operations for trips, hotels, categories
+- **Image Management**: Advanced image compression and storage system
+- **Contact Messages**: Real-time contact form submissions with notifications
+- **User Management**: User accounts, roles, and permissions
+- **Review Moderation**: Approve, edit, or delete user reviews
+- **Media Library**: Compressed image storage with gallery management
+
+### 🚀 **Advanced Features**
+- **Image Compression**: Automatic image compression to base64 for database storage
+- **Real-time Notifications**: Admin notifications for new bookings, contacts, reviews
+- **Search System**: Advanced search with autocomplete and filters
+- **Gallery Management**: Compressed image galleries with drag-and-drop upload
+- **Contact Management**: Admin dashboard for managing customer inquiries
+- **Security Features**: Protected routes, input validation, and sanitization
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **React.js** - UI framework
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **Framer Motion** - Animations
-- **React Router** - Navigation
-- **Axios** - HTTP client
-- **React Hook Form** - Form handling
+### **Frontend**
+- **React 18** - Modern React with hooks and context
+- **Vite** - Fast build tool and development server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Framer Motion** - Smooth animations and transitions
+- **Heroicons** - Beautiful SVG icons
 
-### Backend
-- **Node.js** - Runtime
-- **Express.js** - Web framework
-- **PostgreSQL** - Database
-- **JWT** - Authentication
-- **Multer** - File uploads
-- **Helmet** - Security
-- **Rate Limiting** - API protection
+### **Backend & Database**
+- **Firebase Auth** - User authentication and authorization
+- **Firestore** - NoSQL database with real-time updates
+- **Firebase Storage** - File storage (optional, using compressed base64)
+- **Firebase Rules** - Security rules for data protection
+
+### **Additional Libraries**
+- **React Router DOM** - Client-side routing
+- **React Context API** - State management
+- **Custom Hooks** - Reusable logic components
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** (v16 or higher)
+- **npm** or **yarn**
+- **Firebase account**
+
+### Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/mustafa2080/newToursSite.git
+cd newToursSite
+```
+
+2. **Install dependencies:**
+```bash
+npm install
+```
+
+3. **Set up Firebase:**
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
+   - Enable Authentication (Email/Password)
+   - Enable Firestore Database
+   - Enable Storage (optional)
+   - Copy your Firebase config
+
+4. **Configure environment variables:**
+```bash
+cp .env.example .env
+```
+Edit `.env` with your Firebase configuration:
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
+
+5. **Deploy Firebase rules:**
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init
+firebase deploy --only firestore:rules
+```
+
+6. **Start the development server:**
+```bash
+npm run dev
+```
+
+7. **Create admin user:**
+   - Visit `http://localhost:5173/admin/setup`
+   - Create your admin account
+   - Start managing your tours website!
 
 ## 📁 Project Structure
 
 ```
-tours/
-├── frontend/                 # React frontend
-│   ├── src/
-│   │   ├── components/      # Reusable components
-│   │   ├── pages/          # Page components
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── utils/          # Utility functions
-│   │   ├── context/        # React context
-│   │   └── assets/         # Static assets
-│   ├── public/             # Public assets
-│   └── package.json
-├── backend/                 # Node.js backend
-│   ├── src/
-│   │   ├── controllers/    # Route controllers
-│   │   ├── middleware/     # Custom middleware
-│   │   ├── models/         # Database models
-│   │   ├── routes/         # API routes
-│   │   ├── utils/          # Utility functions
-│   │   └── config/         # Configuration files
-│   ├── uploads/            # File uploads
-│   └── package.json
-└── README.md
+src/
+├── components/
+│   ├── admin/              # Admin-specific components
+│   ├── auth/               # Authentication components
+│   ├── common/             # Reusable UI components
+│   ├── layout/             # Layout components (Header, Footer)
+│   └── reviews/            # Review system components
+├── pages/
+│   ├── admin/              # Admin dashboard pages
+│   ├── auth/               # Login/Register pages
+│   └── [other-pages]/      # Public pages
+├── services/
+│   └── firebase/           # Firebase service integrations
+├── utils/                  # Utility functions and helpers
+├── contexts/               # React contexts for state management
+├── hooks/                  # Custom React hooks
+└── styles/                 # CSS and styling files
 ```
 
-## 🚦 Getting Started
+## 🎯 Key Features Breakdown
 
-### Prerequisites
-- Node.js (v18 or higher)
-- PostgreSQL (v12 or higher)
-- npm or yarn
+### 📸 **Image Compression System**
+- Automatic image compression to 70% quality
+- Resize to optimal dimensions (800x600)
+- Convert to base64 for database storage
+- Significant storage space savings (60-80% compression)
 
-### Installation
+### 📧 **Contact Management**
+- Real-time contact form submissions
+- Admin notifications for new messages
+- Message status tracking (unread, read, replied, archived)
+- Search and filter contact messages
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd tours
-   ```
+### 🔔 **Notification System**
+- Real-time admin notifications
+- Browser notifications support
+- Notification management dashboard
+- Customizable notification types
 
-2. **Setup Backend**
-   ```bash
-   cd backend
-   npm install
-   cp .env.example .env
-   # Edit .env with your database credentials
-   npm run dev
-   ```
-
-3. **Setup Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-4. **Setup Database**
-   - Create a PostgreSQL database named 'tours'
-   - Update database credentials in backend/.env
-   - Run database migrations (will be created)
-
-### Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```env
-PORT=5000
-NODE_ENV=development
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=tours
-DB_USER=postgres
-DB_PASSWORD=your_password
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRE=7d
-FRONTEND_URL=http://localhost:5173
-```
-
-## 🎨 Design System
-
-The project uses a consistent color scheme:
-- **Primary**: Yellow/Gold theme (#f59e0b)
-- **Secondary**: Blue/Gray theme (#64748b)
-- **Typography**: Inter font family
-- **Components**: Reusable Tailwind CSS classes
-
-## 📱 Responsive Design
-
-The website is fully responsive with breakpoints:
-- Mobile: 320px - 768px
-- Tablet: 768px - 1024px
-- Desktop: 1024px+
-
-## 🔒 Security Features
-
-- JWT authentication
-- Password hashing with bcrypt
-- Rate limiting
-- CORS protection
-- Helmet security headers
-- Input validation and sanitization
-- XSS and CSRF protection
+### 🖼️ **Media Library**
+- Compressed image storage
+- Gallery management with drag-and-drop
+- Image optimization and thumbnails
+- Bulk image operations
 
 ## 🚀 Deployment
 
-### Backend Deployment
-- Configure production environment variables
-- Set up PostgreSQL database
-- Deploy to platforms like Heroku, Railway, or DigitalOcean
+### **Firebase Hosting**
+```bash
+npm run build
+firebase deploy
+```
 
-### Frontend Deployment
-- Build the project: `npm run build`
-- Deploy to platforms like Vercel, Netlify, or AWS S3
+### **Vercel**
+```bash
+npm run build
+# Connect your GitHub repo to Vercel
+```
 
-## 📄 API Documentation
+### **Netlify**
+```bash
+npm run build
+# Drag and drop the dist folder to Netlify
+```
 
-API endpoints will be documented as they are created:
-- `/api/auth` - Authentication routes
-- `/api/users` - User management
-- `/api/trips` - Trip management
-- `/api/hotels` - Hotel management
-- `/api/bookings` - Booking system
-- `/api/reviews` - Review system
-- `/api/admin` - Admin operations
+## 🔧 Configuration
+
+### **Firebase Rules**
+The project includes pre-configured Firestore and Storage rules in:
+- `firestore.rules` - Database security rules
+- `storage.rules` - File storage security rules
+
+### **Admin Setup**
+1. Visit `/admin/setup` to create the first admin user
+2. Configure website content in Admin → Content Management
+3. Add sample data using the provided utilities
+
+## 📊 Performance Features
+
+- **Image Compression**: Reduces storage by 60-80%
+- **Lazy Loading**: Images load on demand
+- **Code Splitting**: Optimized bundle sizes
+- **Caching**: Firebase caching for better performance
+- **SEO Optimization**: Meta tags and structured data
+
+## 🛡️ Security Features
+
+- **Firebase Authentication**: Secure user management
+- **Protected Routes**: Admin-only areas
+- **Input Validation**: Form validation and sanitization
+- **CORS Protection**: Secure API endpoints
+- **XSS Prevention**: Content sanitization
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📝 License
 
-This project is licensed under the ISC License.
-=======
-# React + Vite
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🆘 Support
 
-Currently, two official plugins are available:
+- **Email**: support@tours.com
+- **GitHub Issues**: [Create an issue](https://github.com/mustafa2080/newToursSite/issues)
+- **Documentation**: Check the `/docs` folder for detailed guides
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🙏 Acknowledgments
 
-## Expanding the ESLint configuration
+- **Firebase** for the excellent backend services
+- **React Team** for the amazing framework
+- **Tailwind CSS** for the utility-first CSS framework
+- **Heroicons** for the beautiful icons
+- **Unsplash** for the sample images
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
->>>>>>> 4c423c1e61ad675d5d9dbba428518a899d35192d
+---
+
+**Made with ❤️ by [Mustafa](https://github.com/mustafa2080)**
+
+🌟 **Star this repo if you found it helpful!**
